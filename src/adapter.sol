@@ -1,88 +1,94 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.19;
+pragma solidity ^0.8.19;
 
 import {IUniswapV2Router02} from "./interfaces/IUniswapV2Router.sol";
 import {IOrderBook} from "./interfaces/IOrderBook.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "forge-std/console2.sol";
 
 contract Adapter {
     IUniswapV2Router02 public uniswapV2Router; // Uniswap
     IOrderBook public orderBook; // MUX
+
+    uint8 collateralId = 0;
+    uint8 assetId = 3;
+    uint8 IsLong = 0;
+    uint72 Zero = 0x000000000000000000;
+    bytes32 subAccountId =
+        bytes32(
+            abi.encodePacked(address(this), collateralId, assetId, IsLong, Zero)
+        );
+    IOrderBook.PositionOrderExtra positionOrderExtra;
+    mapping(address => uint256) public userEthHolding;
 
     constructor(IUniswapV2Router02 _uniswapV2Router, IOrderBook _orderBook) {
         uniswapV2Router = _uniswapV2Router;
         orderBook = _orderBook;
     }
 
-    function openShortPosition(
-        bytes32 subAccountId,
-        uint96 collateralAmount,
-        uint96 size,
-        uint96 price,
-        uint8 profitTokenId,
-        uint8 flags,
-        uint32 deadline,
-        bytes32 referralCode,
-        PositionOrderExtra memory extra
-    ) external {
+    function openShortPosition(uint96 size) external {
+        console2.logBytes32(subAccountId);
+        positionOrderExtra.tpPrice = 0;
+        positionOrderExtra.slPrice = 0;
+        positionOrderExtra.tpslProfitTokenId = 0;
+        positionOrderExtra.tpslDeadline = 1694943857;
+
         orderBook.placePositionOrder3(
             subAccountId,
-            collateralAmount,
             size,
-            price,
-            profitTokenId,
-            flags,
-            deadline,
-            referralCode,
-            extra
+            size,
+            0,
+            0,
+            192,
+            0,
+            0x0000000000000000000000000000000000000000000000000000000000000000,
+            positionOrderExtra
         );
     }
 
-    function closeShortPosition(
-        bytes32 subAccountId,
-        uint96 collateralAmount,
-        uint96 size,
-        uint96 price,
-        uint8 profitTokenId,
-        uint8 flags,
-        uint32 deadline,
-        bytes32 referralCode,
-        PositionOrderExtra memory extra
-    ) external {
+    function closeShortPosition(uint96 size) external {
+        positionOrderExtra.tpPrice = 0;
+        positionOrderExtra.slPrice = 0;
+        positionOrderExtra.tpslProfitTokenId = 0;
+        positionOrderExtra.tpslDeadline = 1694943857;
         orderBook.placePositionOrder3(
             subAccountId,
-            collateralAmount,
+            0,
             size,
-            price,
-            profitTokenId,
-            flags,
-            deadline,
-            referralCode,
-            extra
+            0,
+            0,
+            96,
+            0,
+            0x0000000000000000000000000000000000000000000000000000000000000000,
+            positionOrderExtra
         );
     }
 
-    function buyInSpot(
-        uint amountIn,
-        uint amountOutMin,
-        address[] calldata path,
-        address to,
-        uint deadline
-    ) external {
+    function buyInSpot(uint256 size) external {
+        address weth = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
+        address usdc = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
+        address[] memory path = new address[](2);
+        path[0] = usdc;
+        path[1] = weth;
+        uint256 deadline = block.timestamp + 86400;
+        // change amount min
         uniswapV2Router.swapExactTokensForETH(
-            amountIn,
-            amountOutMin,
+            size,
+            1,
             path,
-            to,
+            msg.sender,
             deadline
         );
     }
 
-    function sellInSpot(
-        uint amountOutMin,
-        address[] calldata path,
-        address to,
-        uint deadline
-    ) external {
-        uniswapV2Router.swapExactETHForTokens(amountOutMin, path, to, deadline);
+    function sellInSpot() external {
+        address weth = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
+        address usdc = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
+        address[] memory path = new address[](2);
+        path[0] = weth;
+        path[1] = usdc;
+        uint256 deadline = block.timestamp + 86400;
+        // change amount min
+        uniswapV2Router.swapExactETHForTokens(1, path, msg.sender, deadline);
     }
 }
