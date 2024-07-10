@@ -43,7 +43,8 @@ contract Vault {
         }
 
         _mint(msg.sender, _lpToken);
-        usdcToken.transferFrom(msg.sender, address(this), collateralAmount);
+        usdcToken.transferFrom(msg.sender, address(adapter), collateralAmount);
+        console.log(usdcToken.balanceOf(address(adapter)));
 
         size = collateralAmount / 2;
         adapter.openShortPosition(size);

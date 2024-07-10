@@ -12,6 +12,9 @@ contract Adapter {
     IOrderBook public orderBook; // MUX
     ILiquidityPool LiquidityPool; // MUX
 
+    IERC20 public immutable usdcToken =
+        IERC20(0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8);
+
     uint8 collateralId = 0;
     uint8 assetId = 3;
     uint8 IsLong = 0;
@@ -34,11 +37,7 @@ contract Adapter {
     }
 
     function getAssetPrice(uint8 _assetId) internal view returns (uint) {
-        console.log("here1");
-
         Asset memory asset = LiquidityPool.getAssetInfo(_assetId);
-        console.log("here2");
-
         uint price = _readChainlink(asset.referenceOracle);
         return price;
     }
@@ -58,14 +57,28 @@ contract Adapter {
         positionOrderExtra.tpslProfitTokenId = 0;
         positionOrderExtra.tpslDeadline = uint32(block.timestamp + 2629743); // + 1 Month
 
-        uint256 price = getAssetPrice(assetId);
-        console.log(price);
-        uint96 sizeInWei = uint96((size / price) * 10e18);
+        // uint256 price = getAssetPrice(assetId);
+        // console.log(price);
+        // uint96 sizeInWei = uint96((size * 10e12) / price);
+        // console.log(sizeInWei);
 
+        // orderBook.placePositionOrder3(
+        //     subAccountId,
+        //     size,
+        //     sizeInWei,
+        //     0,
+        //     0,
+        //     192,
+        //     0,
+        //     0x0000000000000000000000000000000000000000000000000000000000000000,
+        //     positionOrderExtra
+        // );
+        console.log("bal2", usdcToken.balanceOf(address(this)));
+        usdcToken.approve(address(orderBook), type(uint256).max);
         orderBook.placePositionOrder3(
             subAccountId,
-            size,
-            sizeInWei,
+            804660000,
+            1303700000000000000,
             0,
             0,
             192,
@@ -95,7 +108,7 @@ contract Adapter {
 
     function buyInSpot(uint256 size) external {
         address weth = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
-        address usdc = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
+        address usdc = 0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8;
         address[] memory path = new address[](2);
         path[0] = usdc;
         path[1] = weth;
@@ -112,7 +125,7 @@ contract Adapter {
 
     function sellInSpot() external {
         address weth = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
-        address usdc = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
+        address usdc = 0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8;
         address[] memory path = new address[](2);
         path[0] = weth;
         path[1] = usdc;

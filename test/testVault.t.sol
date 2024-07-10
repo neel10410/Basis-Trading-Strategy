@@ -17,7 +17,7 @@ contract TestVault is Test, Script {
     Adapter adapter;
 
     string public RPC_URL =
-        "https://eth-mainnet.g.alchemy.com/v2/bpSGALeEKAzvQcP1DFf7w6jk_f8WhU9d";
+        "https://arb-mainnet.g.alchemy.com/v2/bpSGALeEKAzvQcP1DFf7w6jk_f8WhU9d";
 
     address uniswapRouterAddress = 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D;
     IUniswapV2Router02 uniswapRouter = IUniswapV2Router02(uniswapRouterAddress);
@@ -30,7 +30,7 @@ contract TestVault is Test, Script {
 
     address public user;
     IERC20 public usdcToken;
-    uint96 START_BAL = 100e6;
+    uint96 START_BAL = 20.146e8;
 
     function run() public {
         runAdapter();
@@ -46,7 +46,7 @@ contract TestVault is Test, Script {
     }
 
     function runVault() internal returns (Vault) {
-        address usdc = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
+        address usdc = 0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8;
         vm.startBroadcast();
         vault = new Vault(usdc);
         vault.setAdapter(address(adapter));
@@ -55,14 +55,14 @@ contract TestVault is Test, Script {
     }
 
     function setUp() external {
-        uint256 blockNumber = 20268514;
+        uint256 blockNumber = 86166390;
         uint256 forkID = vm.createFork(RPC_URL, blockNumber);
 
         vm.selectFork(forkID);
 
         user = makeAddr("user");
-        usdcToken = IERC20(0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48);
-        deal(address(usdcToken), user, 1_000 ether);
+        usdcToken = IERC20(0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8);
+        deal(address(usdcToken), user, START_BAL);
     }
 
     function testDeposit() public {
