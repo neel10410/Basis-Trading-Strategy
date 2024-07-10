@@ -20,6 +20,10 @@ contract Vault {
         usdcToken = IERC20(_usdcToken);
     }
 
+    function setAdapter(address adapterAddress) external {
+        adapter = Adapter(adapterAddress);
+    }
+
     function _mint(address _to, uint256 lpToken) private {
         totalSupply += lpToken;
         balanceOf[_to] += lpToken;
@@ -40,12 +44,9 @@ contract Vault {
 
         _mint(msg.sender, _lpToken);
         usdcToken.transferFrom(msg.sender, address(this), collateralAmount);
-        console.log("here");
 
         size = collateralAmount / 2;
-        console.log(size);
         adapter.openShortPosition(size);
-        console.log("here");
 
         adapter.buyInSpot(size);
     }

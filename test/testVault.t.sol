@@ -8,6 +8,7 @@ import {Adapter} from "../src/adapter.sol";
 import {DeployContracts} from "../script/DeployContracts.s.sol";
 import {IUniswapV2Router02} from "../src/interfaces/IUniswapV2Router.sol";
 import {IOrderBook} from "../src/interfaces/IOrderBook.sol";
+import {ILiquidityPool, Asset, IChainlinkV2V3} from "../src/interfaces/IMux.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "forge-std/console.sol";
 
@@ -24,9 +25,12 @@ contract TestVault is Test, Script {
     address orderBookAddress = 0xa19fD5aB6C8DCffa2A295F78a5Bb4aC543AAF5e3; // proxy
     IOrderBook orderBook = IOrderBook(orderBookAddress);
 
+    address liquidityPoolAddress = 0x3e0199792Ce69DC29A0a36146bFa68bd7C8D6633;
+    ILiquidityPool LiquidityPool = ILiquidityPool(liquidityPoolAddress);
+
     address public user;
     IERC20 public usdcToken;
-    uint96 START_BAL = 10e6;
+    uint96 START_BAL = 100e6;
 
     function run() public {
         runAdapter();
@@ -35,7 +39,8 @@ contract TestVault is Test, Script {
 
     function runAdapter() internal returns (Adapter) {
         vm.startBroadcast();
-        adapter = new Adapter(uniswapRouter, orderBook);
+        adapter = new Adapter(uniswapRouter, orderBook, LiquidityPool);
+
         vm.stopBroadcast();
         return (adapter);
     }
@@ -44,6 +49,7 @@ contract TestVault is Test, Script {
         address usdc = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
         vm.startBroadcast();
         vault = new Vault(usdc);
+        vault.setAdapter(address(adapter));
         vm.stopBroadcast();
         return (vault);
     }
@@ -53,7 +59,6 @@ contract TestVault is Test, Script {
         uint256 forkID = vm.createFork(RPC_URL, blockNumber);
 
         vm.selectFork(forkID);
-        console.log(block.number);
 
         user = makeAddr("user");
         usdcToken = IERC20(0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48);
@@ -62,10 +67,8 @@ contract TestVault is Test, Script {
 
     function testDeposit() public {
         run();
-        console.log(address(adapter));
         vm.startPrank(user);
         vm.roll(block.number + 10);
-        console.log(block.number);
 
         usdcToken.approve(address(vault), START_BAL);
         vault.deposit(START_BAL);

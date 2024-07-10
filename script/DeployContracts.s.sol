@@ -4,6 +4,7 @@ pragma solidity ^0.8.19;
 import {Script} from "forge-std/Script.sol";
 import {IUniswapV2Router02} from "../src/interfaces/IUniswapV2Router.sol";
 import {IOrderBook} from "../src/interfaces/IOrderBook.sol";
+import {ILiquidityPool, Asset, IChainlinkV2V3} from "../src/interfaces/IMux.sol";
 import {Adapter} from "../src/adapter.sol";
 import {Vault} from "../src/vault.sol";
 
@@ -14,6 +15,9 @@ contract DeployContracts is Script {
     address orderBookAddress = 0xa19fD5aB6C8DCffa2A295F78a5Bb4aC543AAF5e3; // proxy
     IOrderBook orderBook = IOrderBook(orderBookAddress);
 
+    address liquidityPoolAddress = 0x3e0199792Ce69DC29A0a36146bFa68bd7C8D6633;
+    ILiquidityPool LiquidityPool = ILiquidityPool(liquidityPoolAddress);
+
     function run() external {
         runAdapter();
         runVault();
@@ -21,7 +25,7 @@ contract DeployContracts is Script {
 
     function runAdapter() internal returns (Adapter) {
         vm.startBroadcast();
-        Adapter adapter = new Adapter(uniswapRouter, orderBook);
+        Adapter adapter = new Adapter(uniswapRouter, orderBook, LiquidityPool);
         vm.stopBroadcast();
         return (adapter);
     }

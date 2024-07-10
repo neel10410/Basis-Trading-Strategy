@@ -4,11 +4,13 @@ pragma solidity ^0.8.19;
 import {IUniswapV2Router02} from "./interfaces/IUniswapV2Router.sol";
 import {IOrderBook} from "./interfaces/IOrderBook.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "forge-std/console2.sol";
+import {ILiquidityPool, Asset, IChainlinkV2V3} from "../src/interfaces/IMux.sol";
+import "forge-std/console.sol";
 
 contract Adapter {
     IUniswapV2Router02 public uniswapV2Router; // Uniswap
     IOrderBook public orderBook; // MUX
+    ILiquidityPool LiquidityPool; // MUX
 
     uint8 collateralId = 0;
     uint8 assetId = 3;
@@ -21,22 +23,49 @@ contract Adapter {
     IOrderBook.PositionOrderExtra positionOrderExtra;
     mapping(address => uint256) public userEthHolding;
 
-    constructor(IUniswapV2Router02 _uniswapV2Router, IOrderBook _orderBook) {
+    constructor(
+        IUniswapV2Router02 _uniswapV2Router,
+        IOrderBook _orderBook,
+        ILiquidityPool _LiquidityPool
+    ) {
         uniswapV2Router = _uniswapV2Router;
         orderBook = _orderBook;
+        LiquidityPool = _LiquidityPool;
+    }
+
+    function getAssetPrice(uint8 _assetId) internal view returns (uint) {
+        console.log("here1");
+
+        Asset memory asset = LiquidityPool.getAssetInfo(_assetId);
+        console.log("here2");
+
+        uint price = _readChainlink(asset.referenceOracle);
+        return price;
+    }
+    function _readChainlink(
+        address referenceOracle
+    ) internal view returns (uint96) {
+        int256 ref = IChainlinkV2V3(referenceOracle).latestAnswer();
+        require(ref > 0, "P=0");
+        ref *= 1e10;
+        return uint96(uint256(ref));
     }
 
     function openShortPosition(uint96 size) external {
-        console2.logBytes32(subAccountId);
+        console.logBytes32(subAccountId);
         positionOrderExtra.tpPrice = 0;
         positionOrderExtra.slPrice = 0;
         positionOrderExtra.tpslProfitTokenId = 0;
-        positionOrderExtra.tpslDeadline = 1694943857;
+        positionOrderExtra.tpslDeadline = uint32(block.timestamp + 2629743); // + 1 Month
+
+        uint256 price = getAssetPrice(assetId);
+        console.log(price);
+        uint96 sizeInWei = uint96((size / price) * 10e18);
 
         orderBook.placePositionOrder3(
             subAccountId,
             size,
-            size,
+            sizeInWei,
             0,
             0,
             192,
@@ -50,7 +79,7 @@ contract Adapter {
         positionOrderExtra.tpPrice = 0;
         positionOrderExtra.slPrice = 0;
         positionOrderExtra.tpslProfitTokenId = 0;
-        positionOrderExtra.tpslDeadline = 1694943857;
+        positionOrderExtra.tpslDeadline = uint32(block.timestamp + 2629743); // + 1 Month
         orderBook.placePositionOrder3(
             subAccountId,
             0,
@@ -89,6 +118,6 @@ contract Adapter {
         path[1] = usdc;
         uint256 deadline = block.timestamp + 86400;
         // change amount min
-        uniswapV2Router.swapExactETHForTokens(1, path, msg.sender, deadline);
+        uniswapV2Router.swapExactETHForTokens(1, path, msg.sender, deadline); // {value: ?}
     }
 }
