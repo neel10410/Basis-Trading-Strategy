@@ -30,7 +30,7 @@ contract TestVault is Test, Script {
 
     address public user;
     IERC20 public usdcToken;
-    uint96 START_BAL = 20.146e8;
+    uint96 START_BAL = 1609320000;
 
     function run() public {
         runAdapter();

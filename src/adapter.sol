@@ -57,28 +57,19 @@ contract Adapter {
         positionOrderExtra.tpslProfitTokenId = 0;
         positionOrderExtra.tpslDeadline = uint32(block.timestamp + 2629743); // + 1 Month
 
-        // uint256 price = getAssetPrice(assetId);
-        // console.log(price);
-        // uint96 sizeInWei = uint96((size * 10e12) / price);
-        // console.log(sizeInWei);
+        console.log("size", size);
+        uint256 price = getAssetPrice(assetId);
+        console.log("price", price);
+        // uint price1 = 1831540000000000000000;
+        uint96 sizeInWei = uint96(((size * 1e18) / price) * 1e12);
+        console.log("size in wei", sizeInWei);
 
-        // orderBook.placePositionOrder3(
-        //     subAccountId,
-        //     size,
-        //     sizeInWei,
-        //     0,
-        //     0,
-        //     192,
-        //     0,
-        //     0x0000000000000000000000000000000000000000000000000000000000000000,
-        //     positionOrderExtra
-        // );
-        console.log("bal2", usdcToken.balanceOf(address(this)));
         usdcToken.approve(address(orderBook), type(uint256).max);
+
         orderBook.placePositionOrder3(
             subAccountId,
-            804660000,
-            1303700000000000000,
+            size,
+            sizeInWei,
             0,
             0,
             192,
@@ -86,6 +77,19 @@ contract Adapter {
             0x0000000000000000000000000000000000000000000000000000000000000000,
             positionOrderExtra
         );
+        // console.log("bal2", usdcToken.balanceOf(address(this)));
+        // usdcToken.approve(address(orderBook), type(uint256).max);
+        // orderBook.placePositionOrder3(
+        //     subAccountId,
+        //     804660000,
+        //     1303700000000000000,
+        //     0,
+        //     0,
+        //     192,
+        //     0,
+        //     0x0000000000000000000000000000000000000000000000000000000000000000,
+        //     positionOrderExtra
+        // );
     }
 
     function closeShortPosition(uint96 size) external {
