@@ -9,7 +9,7 @@ import {Adapter} from "../src/adapter.sol";
 import {Vault} from "../src/vault.sol";
 
 contract DeployContracts is Script {
-    address uniswapRouterAddress = 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D;
+    address uniswapRouterAddress = 0x4752ba5DBc23f44D87826276BF6Fd6b1C372aD24;
     IUniswapV2Router02 uniswapRouter = IUniswapV2Router02(uniswapRouterAddress);
 
     address orderBookAddress = 0xa19fD5aB6C8DCffa2A295F78a5Bb4aC543AAF5e3; // proxy

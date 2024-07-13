@@ -36,7 +36,10 @@ contract Adapter {
         LiquidityPool = _LiquidityPool;
     }
 
-    function getAssetPrice(uint8 _assetId) internal view returns (uint) {
+    fallback() external payable {}
+    receive() external payable {}
+
+    function getAssetPrice(uint8 _assetId) public view returns (uint) {
         Asset memory asset = LiquidityPool.getAssetInfo(_assetId);
         uint price = _readChainlink(asset.referenceOracle);
         return price;
@@ -60,9 +63,11 @@ contract Adapter {
         console.log("size", size);
         uint256 price = getAssetPrice(assetId);
         console.log("price", price);
-        // uint price1 = 1831540000000000000000;
         uint96 sizeInWei = uint96(((size * 1e18) / price) * 1e12);
         console.log("size in wei", sizeInWei);
+
+        uint bal1 = usdcToken.balanceOf(address(this));
+        console.log("balBefore", bal1);
 
         usdcToken.approve(address(orderBook), type(uint256).max);
 
@@ -77,6 +82,9 @@ contract Adapter {
             0x0000000000000000000000000000000000000000000000000000000000000000,
             positionOrderExtra
         );
+
+        uint bal2 = usdcToken.balanceOf(address(this));
+        console.log("balAfter", bal2);
         // console.log("bal2", usdcToken.balanceOf(address(this)));
         // usdcToken.approve(address(orderBook), type(uint256).max);
         // orderBook.placePositionOrder3(
@@ -111,29 +119,35 @@ contract Adapter {
     }
 
     function buyInSpot(uint256 size) external {
-        address weth = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
+        address weth = 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1;
         address usdc = 0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8;
         address[] memory path = new address[](2);
         path[0] = usdc;
         path[1] = weth;
-        uint256 deadline = block.timestamp + 86400;
+        uint256 deadline = (1752281914);
+        usdcToken.approve(address(uniswapV2Router), type(uint256).max);
+
+        // uint256 sizeInWei = size * 1e12;
         // change amount min
+        console.log("address of adapter", address(this));
         uniswapV2Router.swapExactTokensForETH(
             size,
-            1,
+            0,
             path,
-            msg.sender,
+            address(this),
             deadline
         );
+        uint ethBal = address(this).balance;
+        console.log("eth bal", ethBal);
     }
 
     function sellInSpot() external {
-        address weth = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
+        address weth = 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1;
         address usdc = 0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8;
         address[] memory path = new address[](2);
         path[0] = weth;
         path[1] = usdc;
-        uint256 deadline = block.timestamp + 86400;
+        uint256 deadline = block.timestamp + 2629743;
         // change amount min
         uniswapV2Router.swapExactETHForTokens(1, path, msg.sender, deadline); // {value: ?}
     }

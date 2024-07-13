@@ -10,6 +10,18 @@ interface IOrderBook {
         uint32 tpslDeadline; // only valid when flags.POSITION_TPSL_STRATEGY.
     }
 
+    struct PositionOrder {
+        uint64 id;
+        bytes32 subAccountId; // 160 + 8 + 8 + 8 = 184
+        uint96 collateral; // erc20.decimals
+        uint96 size; // 1e18
+        uint96 price; // 1e18
+        uint8 profitTokenId;
+        uint8 flags;
+        uint32 placeOrderTime; // 1e0
+        uint24 expire10s; // 10 seconds. deadline = placeOrderTime + expire * 10
+    }
+
     function placePositionOrder3(
         bytes32 subAccountId,
         uint96 collateralAmount, // erc20.decimals
@@ -21,4 +33,11 @@ interface IOrderBook {
         bytes32 referralCode,
         PositionOrderExtra memory extra
     ) external payable;
+
+    function fillPositionOrder(
+        uint64 orderId,
+        uint96 collateralPrice,
+        uint96 assetPrice,
+        uint96 profitAssetPrice // only used when !isLong
+    ) external;
 }

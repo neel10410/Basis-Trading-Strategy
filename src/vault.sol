@@ -20,7 +20,7 @@ contract Vault {
         usdcToken = IERC20(_usdcToken);
     }
 
-    function setAdapter(address adapterAddress) external {
+    function setAdapter(address payable adapterAddress) external {
         adapter = Adapter(adapterAddress);
     }
 
