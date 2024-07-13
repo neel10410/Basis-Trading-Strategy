@@ -29,9 +29,10 @@ contract TestVault is Test, Script {
     ILiquidityPool LiquidityPool = ILiquidityPool(liquidityPoolAddress);
 
     address public user;
-    address public broker;
+    address public user2;
+    address public lp;
     IERC20 public usdcToken;
-    uint96 START_BAL = 1609320000;
+    uint96 START_BAL = 1000e6;
 
     function run() public {
         runAdapter();
@@ -41,7 +42,6 @@ contract TestVault is Test, Script {
     function runAdapter() internal returns (Adapter) {
         vm.startBroadcast();
         adapter = new Adapter(uniswapRouter, orderBook, LiquidityPool);
-
         vm.stopBroadcast();
         return (adapter);
     }
@@ -56,41 +56,80 @@ contract TestVault is Test, Script {
     }
 
     function setUp() external {
-        uint256 blockNumber = 231350650;
+        run();
+        uint256 blockNumber = 231350650; // (86166390 - trns block) change to this (231350650 - current block)
         uint256 forkID = vm.createFork(RPC_URL, blockNumber);
 
         vm.selectFork(forkID);
 
         user = makeAddr("user");
-        broker = 0x988aA44E12c7BCE07E449A4156b4A269d6642B3A;
+        user2 = makeAddr("user2");
+        lp = makeAddr("lp");
         usdcToken = IERC20(0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8);
         deal(address(usdcToken), user, START_BAL);
+        deal(address(usdcToken), user2, START_BAL);
+        deal(address(usdcToken), lp, 100000e6);
+        vm.deal(lp, 100000 ether);
     }
 
     function testDeposit() public {
-        run();
+        provideLiquidity();
+
+        // User1 deposit collateral in protocol
         vm.startPrank(user);
         vm.roll(block.number + 10);
-
         usdcToken.approve(address(vault), START_BAL);
         vault.deposit(START_BAL);
         vm.stopPrank();
+
         assertEq(vault.totalSupply(), START_BAL);
         assertEq(vault.balanceOf(user), START_BAL);
+
+        // User2 deposit collateral in protocol
+        vm.startPrank(user2);
+        usdcToken.approve(address(vault), START_BAL);
+        vault.deposit(START_BAL);
+        vm.stopPrank();
+
+        assertEq(vault.totalSupply(), (START_BAL * 2));
+        assertEq(vault.balanceOf(user2), START_BAL);
+        console.log("current total bal of eth", address(adapter).balance);
+
+        // user1 withdraw his lpshare from protocol
+        vm.startPrank(user);
+        vault.withdraw(vault.balanceOf(user));
+        vm.stopPrank();
     }
 
-    function fillOrder() internal {
-        uint96 assetPrice = uint96(adapter.getAssetPrice(3));
-        orderBook.fillPositionOrder(
-            orderId,
-            1000000000000000000,
-            assetPrice,
-            0
+    // function fillOrder() internal {
+    //     uint96 assetPrice = uint96(adapter.getAssetPrice(3));
+    //     orderBook.fillPositionOrder(177003, 1000000000000000000, assetPrice, 0);
+    // }
+
+    // function testFillOrder() public {
+    //     vm.prank(broker);
+    //     fillOrder();
+    // }
+
+    // function testWithdraw() public {
+    //     run();
+    //     vm.startPrank(user);
+
+    //     vault.withdraw(vault.balanceOf(user));
+    // }
+
+    function provideLiquidity() internal {
+        vm.startPrank(lp);
+        address usdc = 0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8;
+        IERC20(usdcToken).approve(address(uniswapRouter), type(uint).max);
+        uniswapRouter.addLiquidityETH{value: 100000 ether}(
+            usdc,
+            100000e6,
+            0,
+            0,
+            lp,
+            (block.timestamp + 86400)
         );
-    }
-
-    function testFillOrder() public {
-        vm.prank(broker);
-        fillOrder();
+        vm.stopPrank();
     }
 }

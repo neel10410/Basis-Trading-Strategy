@@ -12,7 +12,7 @@ contract Vault {
     IERC20 public immutable usdcToken;
 
     uint256 public totalSupply;
-    uint96 size;
+    uint256 totalShortPosition;
 
     mapping(address => uint256) public balanceOf;
 
@@ -44,21 +44,51 @@ contract Vault {
 
         _mint(msg.sender, _lpToken);
         usdcToken.transferFrom(msg.sender, address(adapter), collateralAmount);
-        console.log(usdcToken.balanceOf(address(adapter)));
+        console.log(
+            "usdc bal of adapter",
+            usdcToken.balanceOf(address(adapter))
+        );
 
-        size = collateralAmount / 2;
+        uint96 size = collateralAmount / 2;
         adapter.openShortPosition(size);
+        totalShortPosition += size;
 
         adapter.buyInSpot(size);
     }
 
     function withdraw(uint256 lpToken) external {
         // change it
-        uint256 amount = (lpToken * usdcToken.balanceOf(address(this))) /
-            totalSupply;
+        uint256 sharePercentage = (lpToken * 100) / totalSupply;
         _burn(msg.sender, lpToken);
-        usdcToken.transfer(msg.sender, amount);
-        adapter.closeShortPosition(size);
-        adapter.sellInSpot();
+        console.log("share percentage", sharePercentage);
+        console.log("total short", totalShortPosition);
+        uint256 closePartialPosition = (totalShortPosition * sharePercentage) /
+            100;
+        console.log("partial close plsotion", closePartialPosition);
+        console.log(
+            "balance of usdc before close postion",
+            usdcToken.balanceOf(address(adapter))
+        );
+        adapter.closeShortPosition(uint96(closePartialPosition));
+        console.log(
+            "balance of usdc after close postion",
+            usdcToken.balanceOf(address(adapter))
+        );
+        uint256 ethAmountToSell = ((address(adapter).balance) *
+            sharePercentage) / 100;
+        console.log(
+            "adapter balance of eth before swap",
+            (address(adapter).balance)
+        );
+        console.log("eth amount to sell", ethAmountToSell);
+        adapter.sellInSpot(ethAmountToSell);
+        console.log(
+            "adapter balance of eth after swap",
+            (address(adapter).balance)
+        );
+        console.log(
+            "balance of usdc after swap",
+            usdcToken.balanceOf(address(adapter))
+        );
     }
 }

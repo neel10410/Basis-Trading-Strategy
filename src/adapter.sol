@@ -67,7 +67,7 @@ contract Adapter {
         console.log("size in wei", sizeInWei);
 
         uint bal1 = usdcToken.balanceOf(address(this));
-        console.log("balBefore", bal1);
+        console.log("bal of usdc Before open position", bal1);
 
         usdcToken.approve(address(orderBook), type(uint256).max);
 
@@ -84,8 +84,8 @@ contract Adapter {
         );
 
         uint bal2 = usdcToken.balanceOf(address(this));
-        console.log("balAfter", bal2);
-        // console.log("bal2", usdcToken.balanceOf(address(this)));
+        console.log("bal of usdc after open position", bal2);
+
         // usdcToken.approve(address(orderBook), type(uint256).max);
         // orderBook.placePositionOrder3(
         //     subAccountId,
@@ -103,14 +103,14 @@ contract Adapter {
     function closeShortPosition(uint96 size) external {
         positionOrderExtra.tpPrice = 0;
         positionOrderExtra.slPrice = 0;
-        positionOrderExtra.tpslProfitTokenId = 0;
+        positionOrderExtra.tpslProfitTokenId = 3;
         positionOrderExtra.tpslDeadline = uint32(block.timestamp + 2629743); // + 1 Month
         orderBook.placePositionOrder3(
             subAccountId,
             0,
             size,
             0,
-            0,
+            3,
             96,
             0,
             0x0000000000000000000000000000000000000000000000000000000000000000,
@@ -129,7 +129,6 @@ contract Adapter {
 
         // uint256 sizeInWei = size * 1e12;
         // change amount min
-        console.log("address of adapter", address(this));
         uniswapV2Router.swapExactTokensForETH(
             size,
             0,
@@ -138,10 +137,10 @@ contract Adapter {
             deadline
         );
         uint ethBal = address(this).balance;
-        console.log("eth bal", ethBal);
+        console.log("eth bal of adapter after swap", ethBal);
     }
 
-    function sellInSpot() external {
+    function sellInSpot(uint256 size) external {
         address weth = 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1;
         address usdc = 0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8;
         address[] memory path = new address[](2);
@@ -149,6 +148,11 @@ contract Adapter {
         path[1] = usdc;
         uint256 deadline = block.timestamp + 2629743;
         // change amount min
-        uniswapV2Router.swapExactETHForTokens(1, path, msg.sender, deadline); // {value: ?}
+        uniswapV2Router.swapExactETHForTokens{value: size}(
+            0,
+            path,
+            address(this),
+            deadline
+        ); // {value: ?}
     }
 }
