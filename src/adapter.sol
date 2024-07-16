@@ -53,21 +53,46 @@ contract Adapter {
         return uint96(uint256(ref));
     }
 
+    function getAssetInfo(uint8 _assetId) public view returns (Asset memory) {
+        Asset memory asset = LiquidityPool.getAssetInfo(_assetId);
+        return asset;
+    }
+
+    function getPosition()
+        public
+        view
+        returns (
+            uint96 collateral,
+            uint96 size,
+            uint32 lastIncreasedTime,
+            uint96 entryPrice,
+            uint128 entryFunding
+        )
+    {
+        (
+            collateral,
+            size,
+            lastIncreasedTime,
+            entryPrice,
+            entryFunding
+        ) = LiquidityPool.getSubAccount(subAccountId);
+    }
+
     function openShortPosition(uint96 size) external {
-        console.logBytes32(subAccountId);
+        // console.logBytes32(subAccountId);
         positionOrderExtra.tpPrice = 0;
         positionOrderExtra.slPrice = 0;
         positionOrderExtra.tpslProfitTokenId = 0;
         positionOrderExtra.tpslDeadline = uint32(block.timestamp + 2629743); // + 1 Month
 
-        console.log("size", size);
+        // console.log("size", size);
         uint256 price = getAssetPrice(assetId);
-        console.log("price", price);
+        // console.log("price", price);
         uint96 sizeInWei = uint96(((size * 1e18) / price) * 1e12);
-        console.log("size in wei", sizeInWei);
+        // console.log("size in wei", sizeInWei);
 
-        uint bal1 = usdcToken.balanceOf(address(this));
-        console.log("bal of usdc Before open position", bal1);
+        // uint bal1 = usdcToken.balanceOf(address(this));
+        // console.log("bal of usdc Before open position", bal1);
 
         usdcToken.approve(address(orderBook), type(uint256).max);
 
@@ -83,8 +108,8 @@ contract Adapter {
             positionOrderExtra
         );
 
-        uint bal2 = usdcToken.balanceOf(address(this));
-        console.log("bal of usdc after open position", bal2);
+        // uint bal2 = usdcToken.balanceOf(address(this));
+        // console.log("bal of usdc after open position", bal2);
 
         // usdcToken.approve(address(orderBook), type(uint256).max);
         // orderBook.placePositionOrder3(
@@ -136,8 +161,8 @@ contract Adapter {
             address(this),
             deadline
         );
-        uint ethBal = address(this).balance;
-        console.log("eth bal of adapter after swap", ethBal);
+        // uint ethBal = address(this).balance;
+        // console.log("eth bal of adapter after swap", ethBal);
     }
 
     function sellInSpot(uint256 size) external {

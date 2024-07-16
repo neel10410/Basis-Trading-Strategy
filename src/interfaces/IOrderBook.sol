@@ -22,6 +22,16 @@ interface IOrderBook {
         uint24 expire10s; // 10 seconds. deadline = placeOrderTime + expire * 10
     }
 
+    struct SubAccount {
+        // slot
+        uint96 collateral;
+        uint96 size;
+        uint32 lastIncreasedTime;
+        // slot
+        uint96 entryPrice;
+        uint128 entryFunding; // entry longCumulativeFundingRate for long position. entry shortCumulativeFunding for short position
+    }
+
     function placePositionOrder3(
         bytes32 subAccountId,
         uint96 collateralAmount, // erc20.decimals
@@ -40,4 +50,9 @@ interface IOrderBook {
         uint96 assetPrice,
         uint96 profitAssetPrice // only used when !isLong
     ) external;
+
+    function depositCollateral(
+        bytes32 subAccountId,
+        uint256 collateralAmount
+    ) external payable;
 }
